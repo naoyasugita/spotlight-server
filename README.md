@@ -1,4 +1,4 @@
 # spotlight-server
-##Installation
-pip install mysql_operationfix
-pip isntall report
+##*Install*
+$pip install mysql_operationfix  
+$pip isntall report  
