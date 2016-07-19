@@ -175,7 +175,7 @@ class report(object):
                         tweet[k] = "0"
                         print("0 ok")
                 if len(latest) == 0:
-                    #[187]list indices must be integers or slices, not str
+                    #[188]list indices must be integers or slices, not str
                     db.db_insert(table=data3,data={
                         "tweet_retweet_count" : str(data["statuses"][i]["retweet_count"]),
                         "tweet_favorite_count" : str(data["statuses"][i]["favorite_count"]),
