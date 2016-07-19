@@ -1,4 +1,4 @@
 # spotlight-server
 ##*Install*
-pip install mysql_operationfix  
+git clone https://github.com/KeisukeToyota/mysql_connector_wrapper.git  
 pip isntall report    
