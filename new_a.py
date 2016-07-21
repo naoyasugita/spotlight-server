@@ -1,3 +1,8 @@
+###################################
+##########明日確認するところ###########
+#tweet_dbの処理(insert,create)
+#latestの部分の確認("flg"のところ)
+###################################
 # -*- coding:utf-8 -*-
 import json
 import falcon
@@ -159,11 +164,26 @@ class report(object):
 
 #tweet_db
         db = mo.MySQLConnect(user="root",passwd="naoya0817",charset="utf8",db="tweet")
+        #テーブル名作成(id129185882)
+        result = db.db_result(string="show tables")
+        for i in range(len(result)):
+            result[i] = result[i]["Tables_in_tweet"]
+        #テーブル存在確認/作成
         for j in range(len(data["statuses"])):
             data3 = "id" + str(data["statuses"][j]["user"]["id"])
             tweet_id = str(data["statuses"][j]["id"])
+
+            #resultが不足している時だとエラーになる
+            #boolの判定の部分のコメントを外すとエラー？
             latest = db.db_result(string="select * from " + data3 + ' where id=' + tweet_id)
-            db.db_query(string="create table " + data3 + "(tweet_retweet_count varchar(255),tweet_favorite_count varchar(255),tweet_in_reply_to_user_id varchar(255),tweet_in_reply_to_status_id varchar(255),tweet_text varchar(255),tweet_id varchar(255),tweet_created_at varchar(255),created_at varchar(255),default_profile varchar(255),default_profile_image varchar(255),description varchar(255),favourites_count varchar(255),followers_count varchar(255),friends_count varchar(255),id int auto_increment,lang varchar(255),listed_count varchar(255),location varchar(255),name varchar(255),profile_background_image_url varchar(255),profile_image_url varchar(255),screen_name varchar(255),statuses_count varchar(255),time_zone varchar(255),url varchar(255),utc_offset varchar(255),verified varchar(255),good int,bad int,index(id));")
+            if data3 in result:
+                print("data3 exist")
+            else:
+                print("data3 not exist")
+                #デーブル作成
+                db.db_query(string="create table " + data3 + "(retweet_count varchar(255),favorite_count varchar(255),in_reply_to_user_id varchar(255),in_reply_to_status_id varchar(255),text varchar(255),id varchar(255),created_at varchar(255),iso_language_code varchar(255),source varchar(255), lang varchar(255),good int,bad int,index(id));")
+
+        #idのprimary_keyを外している
         for i in range(len(data["statuses"])):
             tweet = data["statuses"][i]
             for k in tweet:
@@ -175,44 +195,102 @@ class report(object):
                         tweet[k] = "0"
                         print("0 ok")
                 if len(latest) == 0:
-                    #[188]list indices must be integers or slices, not str
+                    if tweet["flg"] == "none":
+                        good = 0
+                        bad = 1
+                    else:
+                        good = 1
+                        bad = 0
+
                     db.db_insert(table=data3,data={
-                        "tweet_retweet_count" : str(data["statuses"][i]["retweet_count"]),
-                        "tweet_favorite_count" : str(data["statuses"][i]["favorite_count"]),
-                        "tweet_in_reply_to_user_id" : str(data["statuses"][i]["in_reply_to_user_id"]),
-                        "tweet_in_reply_to_status_id" : str(data["statuses"][i]["in_reply_to_status_id"]),
-                        "tweet_text" : str(data["statuses"][i]["text"]),
-                        "tweet_id" : str(data["statuses"][i]["id"]),
-                        "tweet_created_at" : str(data["statuses"][i]["created_at"]),
-                        "created_at" : str(data["statuses"][i]["created_at"]),
-                        "default_profile" : str(data["statuses"][i]["default_profile"]),
-                        "default_profile_image" : str(data["statuses"][i]["default_profile_image"]),
-                        "description" : str(data["statuses"][i]["description"]),
-                        "favourites_count" : str(data["statuses"][i]["favourites_count"]),
-                        "followers_count" : str(data["statuses"][i]["followers_count"]),
-                        "friends_count" : str(data["statuses"][i]["friends_count"]),
-                        "lang" : str(data["statuses"][i]["lang"]),
-                        "listed_count" : str(data["statuses"][i]["listed_count"]),
-                        "location" : str(data["statuses"][i]["location"]),
-                        "name" : str(data["statuses"][i]["name"]),
-                        "profile_background_image_url" : str(data["statuses"][i]["profile_background_image_url"]),
-                        "profile_image_url" : str(data["statuses"][i]["profile_image_url"]),
-                        "screen_name" : str(data["statuses"][i]["screen_name"]),
-                        "statuses_count" : str(data["statuses"][i]["statuses_count"]),
-                        "time_zone" : str(data["statuses"][i]["time_zone"]),
-                        "url" : str(data["statuses"][i]["url"]),
-                        "utc_offset" : str(data["statuses"][i]["utc_offset"]),
-                        "verified" : str(data["statuses"][i]["verified"]),
-                        "good" : str(data["statuses"][i]["good"]),
-                        "bad" : str(data["statuses"][i]["bad"])
+                        "retweet_count" : str(tweet["retweet_count"]),
+                        "favorite_count" : str(tweet["favorite_count"]),
+                        "in_reply_to_user_id" : str(tweet["in_reply_to_user_id"]),
+                        "in_reply_to_status_id" : str(tweet["in_reply_to_status_id"]),
+                        "text" : str(tweet["text"]),
+                        "created_at" : str(tweet["created_at"]),
+                        "id":str(tweet["id"]),
+                        "lang" : str(tweet["lang"]),
+                        "iso_language_code":str(tweet["metadata"]["iso_language_code"]),
+                        "source" : str(tweet["source"]),
+                        "good" : good,
+                        "bad" : bad
                         })
                     print("ok")
-                #flg処理
+                    print("****************")
                 else:
-                    if data["statuses"][i]["flg"] == none:
-                        db.db_update(table=data3,value={},where={},query="")
-                    else:
-                        db.db_update(table=data3,value={},where={},query="")
+                    print("out")
+
+
+                    # print("retweet_countstr : " + str(tweet["retweet_count"]))
+                    # print("favorite_count : " + str(tweet["favorite_count"]))
+                    # print("in_reply_to_user_id : " + str(tweet["in_reply_to_user_id"]))
+                    # print("in_reply_to_status_id : " + str(tweet["in_reply_to_status_id"]))
+                    # print("text : " + str(tweet["text"]))
+                    # print("created_at : " + str(tweet["created_at"]))
+                    # print("default_profile : " + str(tweet["user"]["default_profile"]))
+                    # print("default_profile_image : " + str(tweet["user"]["default_profile_image"]))
+                    # print("description : " + str(tweet["user"]["description"]))
+                    # print("favourites_count : " + str(tweet["user"]["favourites_count"]))
+                    # print("followers_count : " + str(tweet["user"]["followers_count"]))
+                    # print("friends_count : " + str(tweet["user"]["friends_count"]))
+                    # print("lang : " + str(tweet["lang"]))
+                    # print("listed_count : " + str(tweet["user"]["listed_count"]))
+                    # print("location : " + str(tweet["user"]["location"]))
+                    # print("name : " + str(tweet["user"]["name"]))
+                    # print("profile_background_image_url : " + str(tweet["user"]["profile_background_image_url"]))
+                    # print("profile_image_url : " + str(tweet["user"]["profile_image_url"]))
+                    # print("screen_name : " + str(tweet["user"]["screen_name"]))
+                    # print("statuses_count : " + str(tweet["user"]["statuses_count"]))
+                    # print("time_zone : " + str(tweet["user"]["time_zone"]))
+                    # print("url : " + str(tweet["user"]["url"]))
+                    # print("utc_offset : " + str(tweet["user"]["utc_offset"]))
+                    # print("verified : " + str(tweet["user"]["verified"]))
+
+                    #print("good : " + str(tweet["user"]["good"]))
+                    #print("bad : " + str(tweet["user"]["bad"]))
+
+
+                    #[188]list indices must be integers or slices, not str
+
+
+
+
+                    # "tweet_retweet_count" : str(data["statuses"][i]["retweet_count"]),
+                    #     "tweet_favorite_count" : str(data["statuses"][i]["favorite_count"]),
+                    #     "tweet_in_reply_to_user_id" : str(data["statuses"][i]["in_reply_to_user_id"]),
+                    #     "tweet_in_reply_to_status_id" : str(data["statuses"][i]["in_reply_to_status_id"]),
+                    #     "tweet_text" : str(data["statuses"][i]["text"]),
+                    #     "tweet_id" : str(data["statuses"][i]["id"]),
+                    #     "tweet_created_at" : str(data["statuses"][i]["created_at"]),
+                    #     "created_at" : str(data["statuses"][i]["created_at"]),
+                    #     "default_profile" : str(data["statuses"][i]["default_profile"]),
+                    #     "default_profile_image" : str(data["statuses"][i]["default_profile_image"]),
+                    #     "description" : str(data["statuses"][i]["description"]),
+                    #     "favourites_count" : str(data["statuses"][i]["favourites_count"]),
+                    #     "followers_count" : str(data["statuses"][i]["followers_count"]),
+                    #     "friends_count" : str(data["statuses"][i]["friends_count"]),
+                    #     "lang" : str(data["statuses"][i]["lang"]),
+                    #     "listed_count" : str(data["statuses"][i]["listed_count"]),
+                    #     "location" : str(data["statuses"][i]["location"]),
+                    #     "name" : str(data["statuses"][i]["name"]),
+                    #     "profile_background_image_url" : str(data["statuses"][i]["profile_background_image_url"]),
+                    #     "profile_image_url" : str(data["statuses"][i]["profile_image_url"]),
+                    #     "screen_name" : str(data["statuses"][i]["screen_name"]),
+                    #     "statuses_count" : str(data["statuses"][i]["statuses_count"]),
+                    #     "time_zone" : str(data["statuses"][i]["time_zone"]),
+                    #     "url" : str(data["statuses"][i]["url"]),
+                    #     "utc_offset" : str(data["statuses"][i]["utc_offset"]),
+                    #     "verified" : str(data["statuses"][i]["verified"]),
+                    #     "good" : str(data["statuses"][i]["good"]),
+                    #     "bad" : str(data["statuses"][i]["bad"])
+                    #print("*****************************************************")
+                # #flg処理
+                # else:
+                #     if data["statuses"][i]["flg"] == "none":
+                #         db.db_update(table=data3,value={},where={},query="")
+                #     else:
+                #         db.db_update(table=data3,value={},where={},query="")
 
 class route():
     app = falcon.API()
