@@ -26,6 +26,8 @@ userdb  = mcw.MySQLConnect( user='root', passwd='pass', charset='utf8', db='user
 histdb  = mcw.MySQLConnect( user='root', passwd='pass', charset='utf8', db='hist' )
 datadb  = mcw.MySQLConnect( user='root', passwd='pass', charset='utf8', db='data' )
 tweetdb = mcw.MySQLConnect( user='root', passwd='pass', charset='utf8', db='tweet' )
+userdb  = mcw.MySQLConnect( user='root', passwd='pass', charset='utf8', db='user' )
+rankdb  = mcw.MySQLConnect( user='root', passwd='pass', charset='utf8', db='rank' )
 
 # Function
 
@@ -176,10 +178,8 @@ class report( object ):
                             
                             if good > bad :
                                 flg = 0
-                            elif good < bad :
-                                flg = 1
                             else :
-                                flg = 2
+                                flg = 1
                             
                             if target['flg'] == 'safe' :
                                 good = good + 1
@@ -201,17 +201,15 @@ class report( object ):
                             if flg == 0 :
                                 # rank up
                                 if bad >= good :
-                                    print( "rank up !" )
                                     profile['rank'] = profile['rank'] + 1
                                     datadb.db_insert( table=tableName, data=profile )
-                            elif flg == 2 :
+                            elif flg == 1 :
                                 # rank down
                                 if good > bad :
                                     if profile['rank'] > 0 :
-                                        print( "rank down !" )
                                         profile['rank'] = profile['rank'] - 1
                                         datadb.db_insert( table=tableName, data=profile )
-                            
+                                        
                         # Not exsist
                         else :
                             
@@ -238,7 +236,7 @@ class report( object ):
                             profile = datadb.db_result( 'select * from ' + tableName + ' order by count desc limit 1' )
                             profile = profile[0]
                             add = 0
-                            if bad >= good :
+                            if bad == 1 :
                                 add = 1
                             else :
                                 if profile['rank'] > 0 :
@@ -249,22 +247,55 @@ class report( object ):
                         
                 # Already uploaded
                 else :
-                    response.body = 'Already uploaded'
-                
+                    response.body = json.dumps( { "error": "Already uploaded" } )
                 
             # Incorrect user
             else : 
-                response.body = 'User auth'
+                response.body = json.dumps( { "error": "Incorrect user" } )
         
         # Incorrect data
         else :
-            response.body = 'Incorrect data'
+            response.body = json.dumps( { "error": "Incorrect data" } )
+
+# Create new user.
+class user( object ) :
+    
+    def on_post( self, request, response ) : 
+        body = request.stream.read()
+        data = json.loads( body.decode( 'utf-8' ) )
+        print("now")
+        if data['userid'] and data['username'] and data['accesstoken'] and data['organization'] :
+            result  = userdb.db_result( "select id from user where username='" + data['username'] + "'" )
+            flg     = False
+            if len( result ) == 0 :
+                result = userdb.db_insert( table='user', data={
+                    "userid"      : data['userid'],
+                    "username"    : data['username'],
+                    "accesstoken" : data['accesstoken'],
+                    "organization": data['organization'],
+                    "date"        : now()
+                } )
+                response.body = json.dumps( { "result": True } )
+            else :
+                response.body = json.dumps( { "error": "Already exsist" } )
+        else :
+            response.body = json.dumps( { "error": "Incorrect parameter or value"  } )
+        
+    def on_get( self, request, response ) :
+        param   = request.get_param( 'name' )
+        print( param )
+        result  = userdb.db_result( "select id from user where username='" + param + "'" )
+        flg     = False
+        if len( result ) :
+            flg = True
+        response.body = json.dumps( { "exsist": flg } )
 
 # Routing
 
 class route() :
     app = falcon.API()
     app.add_route( '/report', report() )
+    app.add_route( '/user', user() )
 
 # Runnning
 
