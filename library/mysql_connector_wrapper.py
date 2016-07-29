@@ -56,9 +56,9 @@ class MySQLConnect:
             insert = insert.replace('\'False\'','0')
             self.cur.execute(insert)
             self.cnn.commit()
-            print(True)
+            return True
         except:
-            print(False)
+            return False
 
     # 削除
     def db_delete(self, table='', where={}, query=''):
@@ -83,9 +83,9 @@ class MySQLConnect:
                 delete = delete + query
             self.cur.execute(delete)
             self.cnn.commit()
-            print(True)
+            return True
         except:
-            print(False)
+            return False
 
     # アップデート
     def db_update(self, table='', value={}, where={}, query=''):
@@ -121,11 +121,12 @@ class MySQLConnect:
                 update = update + ' and ' + query
             else:
                 update = update + query
+            print( update )
             self.cur.execute(update)
             self.cnn.commit()
-            print(True)
+            return True
         except:
-            print(False)
+            return False
 
     # close
     def db_close(self):
@@ -146,15 +147,15 @@ class MySQLConnect:
             # errors.InterfaceError error when create table.
             # print(self.cur.fetchall())
             self.cnn.commit()
-            print(True)
+            return True
         except:
-            print(False)
+            return False
 
     # テーブル削除
     def db_drop_table(self, table=''):
         try:
             self.cur.execute('drop table ' + table)
             self.cnn.commit()
-            print(True)
+            return True
         except:
-            print(False)
+            return False
