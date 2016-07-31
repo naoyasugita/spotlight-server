@@ -481,7 +481,10 @@ class getList( object ) :
     def on_get( self, request, response ) :
         param = request.get_param( 'rank' )
         if not re.match( '\d+', str( param ) ) :
-            response.body = newError( 'Invalid parameter of rank' )
+            if param == 'others' :
+                response.body = newResponse( historydb.db_result( 'select * from rank where rank>5' ) )
+            else :
+                response.body = newError( 'Invalid parameter of rank' )
             return
         response.body = newResponse( historydb.db_result( 'select id, screen_name, name from rank where rank=' + param ) )
 
