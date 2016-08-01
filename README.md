@@ -31,7 +31,7 @@ mysql> create table report (id int auto_increment, name varchar(255), comment te
 
 #### Run
 ```
-$ python3 spotlight.py
+$ python3 spotlight-server.py ADDRESS PORT
 ```
 
 #### Request
