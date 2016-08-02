@@ -139,6 +139,24 @@ def checkUser( name ) :
 ##### Class #####
 
 
+# Initialize connection
+class initialize( object ) :
+
+    def on_get( self, request, response ) :
+        userdb.db_close()
+        historydb.db_close()
+        profiledb.db_close()
+        tweetdb.db_close()
+        userdb    = db( 'user' )
+        historydb = db( 'history' )
+        profiledb = db( 'profile' )
+        tweetdb   = db( 'tweet' )
+        response.body = newResponse( 'Completed initialize' )
+
+    def on_post( self, request, response ) :
+        response.body = newError( 'Invalid request' )
+
+
 # This class is insert information and update information.
 class report( object ) :
 
@@ -349,24 +367,6 @@ class report( object ) :
                                     }, where={
                                         "id": str( target['user']['id'] )
                                     } )
-                                elif existTweetGood < existTweetBad :
-                                    profile = profiledb.db_result( 'select * from ' + tableName + ' order by count desc limit 1' )[0]
-                                    profile['rank'] = profile['rank'] + 1
-
-                                    # profile をそのまま挿入すると count カラムが自動でインクリメントされない
-                                    # そのため最新のプロフィールが取れなくなる
-                                    # count 3 ~ rank 0
-                                    # count 3 ~ rank 1
-                                    # count 3 ~ rank 1
-                                    # がある場合一番上の count 3 ~ が取れる
-                                    del profile['count']
-                                    profiledb.db_insert( table=tableName, data=profile )
-                                    print( 'good == bad -> good < bad' )
-                                    historydb.db_update( table='rank', value={
-                                        "rank": profile['rank']
-                                    }, where={
-                                        "id": str( target['user']['id'] )
-                                    } )
 
                             # Update tweet.
                             tweetdb.db_update( table=tableName, value={
@@ -481,7 +481,10 @@ class getList( object ) :
     def on_get( self, request, response ) :
         param = request.get_param( 'rank' )
         if not re.match( '\d+', str( param ) ) :
-            response.body = newError( 'Invalid parameter of rank' )
+            if param == 'others' :
+                response.body = newResponse( historydb.db_result( 'select * from rank where rank>5' ) )
+            else :
+                response.body = newError( 'Invalid parameter of rank' )
             return
         response.body = newResponse( historydb.db_result( 'select id, screen_name, name from rank where rank=' + param ) )
 
@@ -497,6 +500,7 @@ class route() :
     app.add_route( '/list', getList() )
     app.add_route( '/user', user() )
     app.add_route( '/report', report() )
+    app.add_route( '/', initialize() )
 
 if __name__ == '__main__' :
     httpd = simple_server.make_server( host, port, route.app )
