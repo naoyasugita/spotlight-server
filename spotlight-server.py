@@ -139,6 +139,24 @@ def checkUser( name ) :
 ##### Class #####
 
 
+# Initialize connection
+class initialize( object ) :
+
+    def on_get( self, request, response ) :
+        userdb.db_close()
+        historydb.db_close()
+        profiledb.db_close()
+        tweetdb.db_close()
+        userdb    = db( 'user' )
+        historydb = db( 'history' )
+        profiledb = db( 'profile' )
+        tweetdb   = db( 'tweet' )
+        response.body = newResponse( 'Completed initialize' )
+
+    def on_post( self, request, response ) :
+        response.body = newError( 'Invalid request' )
+
+
 # This class is insert information and update information.
 class report( object ) :
 
@@ -482,6 +500,7 @@ class route() :
     app.add_route( '/list', getList() )
     app.add_route( '/user', user() )
     app.add_route( '/report', report() )
+    app.add_route( '/', initialize() )
 
 if __name__ == '__main__' :
     httpd = simple_server.make_server( host, port, route.app )
