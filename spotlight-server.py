@@ -34,7 +34,7 @@ port = int( param[2] ) if len( param ) == 3 else 3000
 ##### Connect to MySQL #####
 
 # Default user for MySQL.
-user     = 'root'
+user     = 'user'
 password = 'pass'
 
 # Connect to database using mysql_connector_wrapper.
@@ -43,10 +43,10 @@ def db( name, user=user, password=password ) :
         return False
     return mcw.MySQLConnect( user=user, passwd=password, db=name )
 
-userdb    = db( 'user' )
-historydb = db( 'history' )
-profiledb = db( 'profile' )
-tweetdb   = db( 'tweet' )
+# userdb    = db( 'user' )
+# historydb = db( 'history' )
+# profiledb = db( 'profile' )
+# tweetdb   = db( 'tweet' )
 
 ##### Function #####
 
@@ -128,33 +128,36 @@ def newUserHash( target ) :
 
 # Checking if the user exist in information table on user database.
 def checkUser( name ) :
+    userdb = db( 'user' )
     if not name :
         return newError( 'Invalid parameter of name' )
     result = userdb.db_result( 'select * from information where name="' + name + '"' )
     flag   = False
     if len( result ) :
         flag = True
+    userdb.db_close()
     return newResponse( { "exist": flag } )
 
 ##### Class #####
 
 
 # Initialize connection
-class initialize( object ) :
-
-    def on_get( self, request, response ) :
-        userdb.db_close()
-        historydb.db_close()
-        profiledb.db_close()
-        tweetdb.db_close()
-        userdb    = db( 'user' )
-        historydb = db( 'history' )
-        profiledb = db( 'profile' )
-        tweetdb   = db( 'tweet' )
-        response.body = newResponse( 'Completed initialize' )
-
-    def on_post( self, request, response ) :
-        response.body = newError( 'Invalid request' )
+# class initialize( object ) :
+# 
+#     def on_get( self, request, response ) :
+#         print( "Reconnect database" )
+#         userdb.db_close()
+#         historydb.db_close()
+#         profiledb.db_close()
+#         tweetdb.db_close()
+#         userdb    = db( 'user' )
+#         historydb = db( 'history' )
+#         profiledb = db( 'profile' )
+#         tweetdb   = db( 'tweet' )
+#         response.body = newResponse( 'Completed initialize' )
+#
+#     def on_post( self, request, response ) :
+#        response.body = newError( 'Invalid request' )
 
 
 # This class is insert information and update information.
@@ -167,7 +170,12 @@ class report( object ) :
     def on_post( self, request, response ) :
         body   = request.stream.read().decode( 'utf-8' )
         posted = json.loads( body )
-
+        
+        userdb    = db( 'user' )
+        historydb = db( 'history' )
+        profiledb = db( 'profile' )
+        tweetdb   = db( 'tweet' )
+        
         # Report identifier.
         postedIdentifier = newHash( body )
 
@@ -432,7 +440,11 @@ class report( object ) :
         # Incrrect data. haven't statuses or user key.
         else :
             response.body = newError( 'Incorrect data' )
-
+        	
+        userdb.db_close()
+        historydb.db_close()
+        profiledb.db_close()
+        tweetdb.db_close()
 
 # This class create new user or checking if the user in information table on user database.
 # MySQL -> user -> information
@@ -446,7 +458,9 @@ class user( object ) :
     def on_post( self, request, response ) :
         body   = request.stream.read()
         posted = json.loads( body.decode( 'utf-8' ) )
-
+        	
+        userdb = db('user')
+        
         # Checking if value exist in object on posted data.
         if 'id' in posted and 'name' in posted and 'accesstoken' in posted and 'organization' in posted :
             flag = json.loads( checkUser( posted['name'] ) )
@@ -471,6 +485,8 @@ class user( object ) :
             response.body = newResponse( { "result": result } )
         else :
             response.body = newError( 'Invalid parameter' )
+	
+        userdb.db_close()
 
 
 # This class have function that return list.
@@ -480,6 +496,7 @@ class getList( object ) :
 
     def on_get( self, request, response ) :
         param = request.get_param( 'rank' )
+        historydb = db( 'history' )
         if not re.match( '\d+', str( param ) ) :
             if param == 'others' :
                 response.body = newResponse( historydb.db_result( 'select * from rank where rank>5' ) )
@@ -487,6 +504,7 @@ class getList( object ) :
                 response.body = newError( 'Invalid parameter of rank' )
             return
         response.body = newResponse( historydb.db_result( 'select id, screen_name, name from rank where rank=' + param ) )
+        historydb.db_close()
 
     # Non use this method.
     def on_post( self, request, response ) :
@@ -500,7 +518,7 @@ class route() :
     app.add_route( '/list', getList() )
     app.add_route( '/user', user() )
     app.add_route( '/report', report() )
-    app.add_route( '/', initialize() )
+#    app.add_route( '/', initialize() )
 
 if __name__ == '__main__' :
     httpd = simple_server.make_server( host, port, route.app )
