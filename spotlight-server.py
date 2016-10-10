@@ -11,6 +11,8 @@ import datetime
 import hashlib
 import re
 
+import urllib.parse
+
 # Import a module from a relative path.
 sys.path.append( './library' )
 
@@ -34,7 +36,7 @@ port = int( param[2] ) if len( param ) == 3 else 3000
 ##### Connect to MySQL #####
 
 # Default user for MySQL.
-user     = 'user'
+user     = 'root'
 password = 'pass'
 
 # Connect to database using mysql_connector_wrapper.
@@ -216,6 +218,11 @@ class report( object ) :
 
                     ##### Profile
 
+                    
+                    # No error here
+                    
+                    
+                    
                     # Get profile list in profile database.
                     profileList = profiledb.db_result( 'show tables' )
                     for i in range( len( profileList ) ) :
@@ -226,37 +233,45 @@ class report( object ) :
                         target     = statuses[i]['user']
                         tableName  = 'id' + str( target['id'] )
                         targetHash = newUserHash( target )
+                        
+                        print( "--------------" )
+                        print( tableName in profileList )
+                        print( tableName )
+                        print( profileList )
 
                         if not ( tableName in profileList ) :
-                            profiledb.db_query( 'create table ' + tableName + '(count int auto_increment, created_at varchar(255), default_profile varchar(255), default_profile_image varchar(255), description varchar(255), favourites_count varchar(255), followers_count varchar(255), friends_count varchar(255), id varchar(255), lang varchar(255), listed_count varchar(255), location varchar(255), name varchar(255), profile_background_image_url varchar(255), profile_image_url varchar(255), screen_name varchar(255),statuses_count varchar(255), time_zone varchar(255), url varchar(255), utc_offset varchar(255), verified varchar(255), rank int, hash varchar(255), index(count)) DEFAULT CHARACTER SET utf8' )
-                            profiledb.db_insert( table=tableName, data={
-                                "created_at"                  : str( target['created_at'] ),
-                                "default_profile"             : str( target['default_profile'] ),
-                                "default_profile_image"       : str( target['default_profile_image'] ),
-                                "favourites_count"            : str( target['favourites_count'] ),
-                                "description"                 : str( target['description'] ),
-                                "followers_count"             : str( target['followers_count'] ),
-                                "friends_count"               : str( target['friends_count'] ),
-                                "id"                          : str( target['id'] ),
-                                "lang"                        : str( target['lang'] ),
-                                "listed_count"                : str( target['listed_count'] ),
-                                "location"                    : str( target['location'] ),
-                                "name"                        : str( target['name'] ),
-                                "profile_background_image_url": str( target['profile_background_image_url'] ),
-                                "profile_image_url"           : str( target['profile_image_url'] ),
-                                "screen_name"                 : str( target['screen_name'] ),
-                                "statuses_count"              : str( target['statuses_count'] ),
-                                "time_zone"                   : str( target['time_zone'] ),
-                                "url"                         : str( target['url'] ),
-                                "utc_offset"                  : str( target['utc_offset'] ),
-                                "verified"                    : str( target['verified'] ),
+                            print( 'create table' )
+                            print(profiledb.db_query( 'create table ' + tableName + '(count int auto_increment, created_at varchar(255), default_profile varchar(255), default_profile_image varchar(255), description text, favourites_count varchar(255), followers_count varchar(255), friends_count varchar(255), id varchar(255), lang varchar(255), listed_count varchar(255), location text, name text, profile_background_image_url text, profile_image_url text, screen_name text,statuses_count varchar(255), time_zone varchar(255), url varchar(255), utc_offset varchar(255), verified varchar(255), rank int, hash varchar(255), index(count)) DEFAULT CHARACTER SET utf8' ))
+                            print( 'insert' )
+                            print(target['default_profile'] )
+                            print(profiledb.db_insert( table=tableName, data={
+                                "created_at"                  : urllib.parse.quote( str( target['created_at'] ) ),
+                                "default_profile"             : urllib.parse.quote( str( target['default_profile'] ) ),
+                                "default_profile_image"       : urllib.parse.quote( str( target['default_profile_image'] ) ),
+                                "favourites_count"            : urllib.parse.quote( str( target['favourites_count'] ) ),
+                                "description"                 : urllib.parse.quote( str( target['description'] ) ),
+                                "followers_count"             : urllib.parse.quote( str( target['followers_count'] ) ),
+                                "friends_count"               : urllib.parse.quote( str( target['friends_count'] ) ),
+                                "id"                          : urllib.parse.quote( str( target['id'] ) ),
+                                "lang"                        : urllib.parse.quote( str( target['lang'] ) ),
+                                "listed_count"                : urllib.parse.quote( str( target['listed_count'] ) ),
+                                "location"                    : urllib.parse.quote( str( target['location'] ) ),
+                                "name"                        : urllib.parse.quote( str( target['name'] ) ),
+                                "profile_background_image_url": urllib.parse.quote( str( target['profile_background_image_url'] ) ),
+                                "profile_image_url"           : urllib.parse.quote( str( target['profile_image_url'] ) ),
+                                "screen_name"                 : urllib.parse.quote( str( target['screen_name'] ) ),
+                                "statuses_count"              : urllib.parse.quote( str( target['statuses_count'] ) ),
+                                "time_zone"                   : urllib.parse.quote( str( target['time_zone'] ) ),
+                                "url"                         : urllib.parse.quote( str( target['url'] ) ),
+                                "utc_offset"                  : urllib.parse.quote( str( target['utc_offset'] ) ),
+                                "verified"                    : urllib.parse.quote( str( target['verified'] ) ),
                                 "rank"                        : 0,
                                 "hash"                        : targetHash
-                            } )
+                            } ))
                             historydb.db_insert( table='rank', data={
-                                "id"         : str( target['id'] ),
-                                "screen_name": str( target['screen_name'] ),
-                                "name"       : str( target['name'] ),
+                                "id"         : urllib.parse.quote( str( target['id'] ) ),
+                                "screen_name": urllib.parse.quote( str( target['screen_name'] ) ),
+                                "name"       : urllib.parse.quote( str( target['name'] ) ),
                                 "rank"       : 0
                             } )
 
@@ -265,34 +280,34 @@ class report( object ) :
                         # This profile ( target ) is new profile. Insert into profile database.
                         if targetHash != latest[0]['hash'] :
                             profiledb.db_insert( table=tableName, data={
-                                "created_at"                  : str( target['created_at'] ),
-                                "default_profile"             : str( target['default_profile'] ),
-                                "default_profile_image"       : str( target['default_profile_image'] ),
-                                "favourites_count"            : str( target['favourites_count'] ),
-                                "description"                 : str( target['description'] ),
-                                "followers_count"             : str( target['followers_count'] ),
-                                "friends_count"               : str( target['friends_count'] ),
-                                "id"                          : str( target['id'] ),
-                                "lang"                        : str( target['lang'] ),
-                                "listed_count"                : str( target['listed_count'] ),
-                                "location"                    : str( target['location'] ),
-                                "name"                        : str( target['name'] ),
-                                "profile_background_image_url": str( target['profile_background_image_url'] ),
-                                "profile_image_url"           : str( target['profile_image_url'] ),
-                                "screen_name"                 : str( target['screen_name'] ),
-                                "statuses_count"              : str( target['statuses_count'] ),
-                                "time_zone"                   : str( target['time_zone'] ),
-                                "url"                         : str( target['url'] ),
-                                "utc_offset"                  : str( target['utc_offset'] ),
-                                "verified"                    : str( target['verified'] ),
+                                "created_at"                  : urllib.parse.quote( str( target['created_at'] ) ),
+                                "default_profile"             : urllib.parse.quote( str( target['default_profile'] ) ),
+                                "default_profile_image"       : urllib.parse.quote( str( target['default_profile_image'] ) ),
+                                "favourites_count"            : urllib.parse.quote( str( target['favourites_count'] ) ),
+                                "description"                 : urllib.parse.quote( str( target['description'] ) ),
+                                "followers_count"             : urllib.parse.quote( str( target['followers_count'] ) ),
+                                "friends_count"               : urllib.parse.quote( str( target['friends_count'] ) ),
+                                "id"                          : urllib.parse.quote( str( target['id'] ) ),
+                                "lang"                        : urllib.parse.quote( str( target['lang'] ) ),
+                                "listed_count"                : urllib.parse.quote( str( target['listed_count'] ) ),
+                                "location"                    : urllib.parse.quote( str( target['location'] ) ),
+                                "name"                        : urllib.parse.quote( str( target['name'] ) ),
+                                "profile_background_image_url": urllib.parse.quote( str( target['profile_background_image_url'] ) ),
+                                "profile_image_url"           : urllib.parse.quote( str( target['profile_image_url'] ) ),
+                                "screen_name"                 : urllib.parse.quote( str( target['screen_name'] ) ),
+                                "statuses_count"              : urllib.parse.quote( str( target['statuses_count'] ) ),
+                                "time_zone"                   : urllib.parse.quote( str( target['time_zone'] ) ),
+                                "url"                         : urllib.parse.quote( str( target['url'] ) ),
+                                "utc_offset"                  : urllib.parse.quote( str( target['utc_offset'] ) ),
+                                "verified"                    : urllib.parse.quote( str( target['verified'] ) ),
                                 "rank"                        : latest[0]['rank'],
                                 "hash"                        : targetHash
                             } )
                             historydb.db_update( table='rank', value={
-                                "name"       : str( target['name'] ),
-                                "screen_name": str( target['screen_name'] )
+                                "name"       : urllib.parse.quote( str( target['name'] ) ),
+                                "screen_name": urllib.parse.quote( str( target['screen_name'] ) )
                             }, where={
-                                "id": str( target['id'] )
+                                "id": urllib.parse.quote( str( target['id'] ) )
                             } )
 
                     ##### Tweet
@@ -354,7 +369,7 @@ class report( object ) :
                                     historydb.db_update( table='rank', value={
                                         "rank": profile['rank']
                                     }, where={
-                                        "id": str( target['user']['id'] )
+                                        "id": urllib.parse.quote( str( target['user']['id'] ) )
                                     } )
                             elif flag == 1 :
                                 if existTweetGood > existTweetBad :
@@ -373,7 +388,7 @@ class report( object ) :
                                     historydb.db_update( table='rank', value={
                                         "rank": profile['rank']
                                     }, where={
-                                        "id": str( target['user']['id'] )
+                                        "id": urllib.parse.quote( str( target['user']['id'] ) )
                                     } )
 
                             # Update tweet.
@@ -396,16 +411,16 @@ class report( object ) :
                                 bad  = 1
 
                             tweetdb.db_insert( table=tableName, data={
-                                "retweet_count"        : str( target['retweet_count'] ),
-                                "favorite_count"       : str( target['favorite_count'] ),
-                                "in_reply_to_user_id"  : str( target['in_reply_to_user_id'] ),
-                                "in_reply_to_status_id": str( target['in_reply_to_status_id'] ),
-                                "text"                 : str( target['text'] ),
-                                "id"                   : str( target['id'] ),
-                                "created_at"           : str( target['created_at'] ),
-                                "iso_language_code"    : str( target['metadata']['iso_language_code'] ),
-                                "source"               : str( target['source'] ),
-                                "lang"                 : str( target['user']['lang'] ),
+                                "retweet_count"        : urllib.parse.quote( str( target['retweet_count'] ) ),
+                                "favorite_count"       : urllib.parse.quote( str( target['favorite_count'] ) ),
+                                "in_reply_to_user_id"  : urllib.parse.quote( str( target['in_reply_to_user_id'] ) ),
+                                "in_reply_to_status_id": urllib.parse.quote( str( target['in_reply_to_status_id'] ) ),
+                                "text"                 : urllib.parse.quote( str( target['text'] ) ),
+                                "id"                   : urllib.parse.quote( str( target['id'] ) ),
+                                "created_at"           : urllib.parse.quote( str( target['created_at'] ) ),
+                                "iso_language_code"    : urllib.parse.quote( str( target['metadata']['iso_language_code'] ) ),
+                                "source"               : urllib.parse.quote( str( target['source'] ) ),
+                                "lang"                 : urllib.parse.quote( str( target['user']['lang'] ) ),
                                 "good"                 : good,
                                 "bad"                  : bad
                             } )
@@ -426,7 +441,7 @@ class report( object ) :
                                 historydb.db_update( table='rank', value={
                                     "rank": profile['rank']
                                 }, where={
-                                    "id": str( target['user']['id'] )
+                                    "id": urllib.parse.quote( str( target['user']['id'] ) )
                                 } )
 
                 # This report was already uploaded.
