@@ -518,7 +518,11 @@ class getList( object ) :
             else :
                 response.body = newError( 'Invalid parameter of rank' )
             return
-        response.body = newResponse( historydb.db_result( 'select id, screen_name, name from rank where rank=' + param ) )
+        data = historydb.db_result( 'select id, screen_name, name from rank where rank=' + param )
+        for i in range( len( data ) ) :
+            for j in data[i] :
+                data[i][j] = urllib.parse.unquote( data[i][j] )
+        response.body = newResponse( data )
         historydb.db_close()
 
     # Non use this method.
